@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="hi" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>मल्टी-लेबर हाजिरी व भुगतान रजिस्टर</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white; font-size: 10px; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #cbd5e1 !important; padding: 3px !important; }
+      .photo-box { width: 22px !important; height: 22px !important; font-size: 9px !important; }
+    }
+    .status-btn {
+      width: 24px;
+      height: 24px;
+      font-size: 11px;
+      font-weight: bold;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    .status-P { background-color: #10b981; color: white; }
+    .status-H { background-color: #f59e0b; color: white; }
+    .status-A { background-color: #ef4444; color: white; }
+    .status-empty { background-color: #e2e8f0; color: #64748b; border: 1px dashed #cbd5e1; }
+  </style>
+</head>
+<body class="min-h-full font-sans text-slate-800 flex flex-col pb-16">
+
+  <!-- Header -->
+  <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-full mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white text-lg font-bold">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold">मल्टी-लेबर हाजिरी एवं वेतन रजिस्टर</h1>
+          <p class="text-xs text-slate-400">मासिक मास्टर मस्टर रोल व एडवांस हिसाब</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2 no-print flex-wrap">
+        <button onclick="addLabourRow()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-user-plus"></i> लेबर जोड़ें
+        </button>
+        <button onclick="saveToLocal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-floppy-disk"></i> सेव करें
+        </button>
+        <button onclick="syncToGoogleDrive()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm">
+          <i class="fa-brands fa-google-drive"></i> Drive सिंक
+        </button>
+        <button onclick="openSyncSettingsModal()" class="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-sm" title="Drive सिंक सेटिंग">
+          <i class="fa-solid fa-gear"></i> सेटिंग
+        </button>
+        <button onclick="window.print()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-print"></i> प्रिंट / PDF
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter & Controls -->
+  <main class="max-w-full mx-auto px-4 pt-4 flex-1 w-full space-y-4">
+    
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4 no-print">
+      <div class="flex items-center gap-3 flex-wrap">
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1">महीना चुनें:</label>
+          <select id="monthSelect" onchange="changeMonthYear()" class="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500">
+            <option value="0">जनवरी (Jan)</option>
+            <option value="1">फरवरी (Feb)</option>
+            <option value="2">मार्च (Mar)</option>
+            <option value="3">अप्रैल (Apr)</option>
+            <option value="4">मई (May)</option>
+            <option value="5">जून (Jun)</option>
+            <option value="6">जुलाई (Jul)</option>
+            <option value="7">अगस्त (Aug)</option>
+            <option value="8" selected>सितंबर (Sep)</option>
+            <option value="9">अक्टूबर (Oct)</option>
+            <option value="10">नवंबर (Nov)</option>
+            <option value="11">दिसंबर (Dec)</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1">वर्ष:</label>
+          <select id="yearSelect" onchange="changeMonthYear()" class="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500">
+            <option value="2025">2025</option>
+            <option value="2026" selected>2026</option>
+            <option value="2027">2027</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-600 block mb-1">साइट / प्रोजेक्ट:</label>
+          <input type="text" id="siteName" value="मेन साइट - ब्लॉक A" class="px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 text-xs flex-wrap">
+        <span class="font-semibold text-slate-600">हाजिरी संकेत:</span>
+        <span class="inline-flex items-center gap-1"><span class="status-btn status-empty">-</span> खाली (अनमार्क)</span>
+        <span class="inline-flex items-center gap-1"><span class="status-btn status-P">P</span> पूरा दिन</span>
+        <span class="inline-flex items-center gap-1"><span class="status-btn status-H">H</span> हाफ-डे (0.5)</span>
+        <span class="inline-flex items-center gap-1"><span class="status-btn status-A">A</span> अनुपस्थित</span>
+      </div>
+    </div>
+
+    <!-- Master Attendance Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="bg-slate-800 text-white font-semibold text-[11px]" id="tableHeaderRow"></tr>
+          </thead>
+          <tbody id="labourTableBody" class="divide-y divide-slate-200 font-medium"></tbody>
+          <tfoot class="bg-slate-100 font-bold text-slate-800 border-t-2 border-slate-300" id="tableFooterRow"></tfoot>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Drive Sync Settings Modal -->
+  <div id="syncSettingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+      <div class="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-brands fa-google-drive text-indigo-400 text-lg"></i>
+          <h3 class="font-bold text-sm">Google Drive / Sheet सिंक सेटिंग</h3>
+        </div>
+        <button onclick="closeSyncSettingsModal()" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Google Apps Script Web App URL:</label>
+          <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          <p class="text-[11px] text-slate-500 mt-1">Web App के नीचे से कॉपी किया गया URL यहाँ पेस्ट करें।</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-100 px-5 py-3 border-t border-slate-200 flex items-center justify-end gap-2">
+        <button onclick="closeSyncSettingsModal()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold">रद्द करें</button>
+        <button onclick="saveSyncSettings()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm flex items-center gap-1">
+          <i class="fa-solid fa-check"></i> URL सुरक्षित करें
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Expense Modal -->
+  <div id="expenseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-sm" id="modalLabourTitle">खर्चा विवरण (Advance / Kharcha)</h3>
+          <p class="text-[11px] text-slate-400" id="modalMonthSubtitle"></p>
+        </div>
+        <button onclick="closeExpenseModal()" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-4 bg-slate-50 border-b border-slate-200 space-y-3">
+        <div class="text-xs font-bold text-slate-700">नया खर्चा जोड़ें:</div>
+        <div class="grid grid-cols-12 gap-2">
+          <input type="number" id="newExpAmount" placeholder="रुपये (₹)" class="col-span-4 px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-blue-500">
+          <input type="text" id="newExpDesc" placeholder="विवरण / कारण (उदा. राशन)" class="col-span-5 px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500">
+          <button onclick="addSingleExpense()" class="col-span-3 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1 shadow-sm">
+            <i class="fa-solid fa-plus"></i> जोड़ें
+          </button>
+        </div>
+      </div>
+
+      <div class="p-4 flex-1 overflow-y-auto space-y-2" id="expenseListContainer"></div>
+
+      <div class="bg-slate-100 p-4 border-t border-slate-200 flex items-center justify-between">
+        <span class="text-xs font-bold text-slate-700">कुल खर्चा (Total Kharcha):</span>
+        <span class="text-sm font-extrabold text-rose-600" id="modalTotalKharcha">₹0</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let appData = {
+      currentMonth: 8,
+      currentYear: 2026,
+      site: 'मेन साइट - ब्लॉक A',
+      googleAppScriptUrl: '',
+      masterLabourList: [
+        { id: 1, name: 'रमेश कुमार', role: 'मिस्त्री', dailyRate: 650, photo: '' },
+        { id: 2, name: 'सुरेश यादव', role: 'लेबर', dailyRate: 450, photo: '' }
+      ],
+      monthlyRecords: {}
+    };
+
+    let activeModalLabourId = null;
+
+    function getMonthKey() {
+      return `${appData.currentYear}-${appData.currentMonth}`;
+    }
+
+    function getMonthName(m) {
+      const months = ['जनवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'];
+      return months[m];
+    }
+
+    function getDaysInMonth(year, month) {
+      return new Date(year, month + 1, 0).getDate();
+    }
+
+    function ensureMonthData() {
+      const key = getMonthKey();
+      if (!appData.monthlyRecords[key]) {
+        appData.monthlyRecords[key] = {};
+      }
+      appData.masterLabourList.forEach(l => {
+        if (!appData.monthlyRecords[key][l.id]) {
+          appData.monthlyRecords[key][l.id] = {
+            attendance: {},
+            overtimeAmount: 0,
+            kharchaList: []
+          };
+        } else if (!appData.monthlyRecords[key][l.id].kharchaList) {
+          const oldKharcha = parseFloat(appData.monthlyRecords[key][l.id].kharcha) || 0;
+          appData.monthlyRecords[key][l.id].kharchaList = oldKharcha > 0 ? [{ id: Date.now(), amount: oldKharcha, desc: 'शुरुआती खर्चा' }] : [];
+        }
+      });
+    }
+
+    function getLabourTotalKharcha(labourId) {
+      const key = getMonthKey();
+      const record = appData.monthlyRecords[key]?.[labourId];
+      if (!record || !record.kharchaList) return 0;
+      return record.kharchaList.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    }
+
+    function initHeader() {
+      const daysCount = getDaysInMonth(appData.currentYear, appData.currentMonth);
+      const thead = document.getElementById('tableHeaderRow');
+      let html = `
+        <th class="p-2 text-center w-7">#</th>
+        <th class="p-2 min-w-[170px]">मजदूर का फोटो व नाम</th>
+        <th class="p-2 min-w-[70px]">पद</th>
+        <th class="p-2 min-w-[65px] text-right">दर (₹)</th>
+      `;
+
+      for (let d = 1; d <= daysCount; d++) {
+        const dayOfWeek = new Date(appData.currentYear, appData.currentMonth, d).getDay();
+        const isSun = dayOfWeek === 0;
+        html += `<th class="p-1 text-center w-7 ${isSun ? 'bg-rose-900 text-rose-200' : ''}">${d}</th>`;
+      }
+
+      html += `
+        <th class="p-2 text-center min-w-[55px] bg-slate-900">दिन</th>
+        <th class="p-2 text-right min-w-[75px] bg-slate-900">मूल वेतन</th>
+        <th class="p-2 text-right min-w-[65px] bg-slate-900">OT (₹)</th>
+        <th class="p-2 text-center min-w-[95px] bg-rose-950 text-rose-200">खर्चा (-)</th>
+        <th class="p-2 text-right min-w-[85px] bg-emerald-950 text-emerald-300">बाकी भुगतान</th>
+        <th class="p-2 text-center w-8 no-print bg-slate-900">हटाएं</th>
+      `;
+      thead.innerHTML = html;
+    }
+
+    function renderTable() {
+      ensureMonthData();
+      initHeader();
+
+      const key = getMonthKey();
+      const monthData = appData.monthlyRecords[key];
+      const daysCount = getDaysInMonth(appData.currentYear, appData.currentMonth);
+      const tbody = document.getElementById('labourTableBody');
+      tbody.innerHTML = '';
+
+      let grandBasePay = 0;
+      let grandOT = 0;
+      let grandKharcha = 0;
+      let grandNet = 0;
+
+      appData.masterLabourList.forEach((l, index) => {
+        const record = monthData[l.id] || { attendance: {}, overtimeAmount: 0, kharchaList: [] };
+        let pCount = 0;
+        let hCount = 0;
+
+        for (let d = 1; d <= daysCount; d++) {
+          const st = record.attendance ? record.attendance[d] : null;
+          if (st === 'P') pCount++;
+          if (st === 'H') hCount++;
+        }
+
+        const effectiveDays = pCount + (hCount * 0.5);
+        const basePay = Math.round(effectiveDays * (parseFloat(l.dailyRate) || 0));
+        const ot = parseFloat(record.overtimeAmount) || 0;
+        const kharcha = getLabourTotalKharcha(l.id);
+        const netPay = (basePay + ot) - kharcha;
+
+        grandBasePay += basePay;
+        grandOT += ot;
+        grandKharcha += kharcha;
+        grandNet += netPay;
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition border-b border-slate-200';
+
+        let daysHtml = '';
+        for (let d = 1; d <= daysCount; d++) {
+          const st = (record.attendance && record.attendance[d]) ? record.attendance[d] : '';
+          const displayChar = st ? st : '-';
+          const btnClass = st ? `status-${st}` : 'status-empty';
+          daysHtml += `
+            <td class="p-0.5 text-center">
+              <span onclick="toggleAttendance(${l.id}, ${d})" class="status-btn ${btnClass}">${displayChar}</span>
+            </td>
+          `;
+        }
+
+        const avatarContent = l.photo 
+          ? `<img src="${l.photo}" class="w-full h-full object-cover rounded-full">` 
+          : `<i class="fa-solid fa-camera text-slate-400 group-hover:text-blue-600 text-xs"></i>`;
+
+        tr.innerHTML = `
+          <td class="p-2 text-center text-slate-400 font-semibold">${index + 1}</td>
+          <td class="p-2">
+            <div class="flex items-center gap-2">
+              <div onclick="triggerPhotoUpload(${l.id})" class="photo-box group w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center flex-shrink-0 cursor-pointer overflow-hidden shadow-inner hover:border-blue-500" title="फोटो बदलें/अपलोड करें">
+                ${avatarContent}
+              </div>
+              <input type="file" id="photo-input-${l.id}" accept="image/*" class="hidden" onchange="uploadLabourPhoto(event, ${l.id})">
+              <input type="text" value="${l.name}" oninput="updateMasterField(${l.id}, 'name', this.value)" class="w-full bg-transparent font-semibold text-slate-800 border-0 focus:ring-1 focus:ring-blue-500 rounded px-1">
+            </div>
+          </td>
+          <td class="p-2">
+            <input type="text" value="${l.role}" oninput="updateMasterField(${l.id}, 'role', this.value)" class="w-full bg-transparent text-slate-600 border-0 focus:ring-1 focus:ring-blue-500 rounded px-1">
+          </td>
+          <td class="p-2 text-right">
+            <input type="number" value="${l.dailyRate}" oninput="updateMasterField(${l.id}, 'dailyRate', this.value)" class="w-14 text-right bg-transparent font-bold text-slate-800 border-0 focus:ring-1 focus:ring-blue-500 rounded px-1">
+          </td>
+          ${daysHtml}
+          <td class="p-2 text-center font-bold text-blue-700 bg-blue-50/40">${effectiveDays.toFixed(1)}</td>
+          <td class="p-2 text-right font-semibold text-slate-700">₹${basePay.toLocaleString('en-IN')}</td>
+          <td class="p-2 text-right">
+            <input type="number" value="${ot}" oninput="updateMonthlyField(${l.id}, 'overtimeAmount', this.value)" class="w-14 text-right bg-transparent text-emerald-600 font-semibold border-0 focus:ring-1 focus:ring-blue-500 rounded px-1">
+          </td>
+          <td class="p-2 text-center">
+            <button onclick="openExpenseModal(${l.id})" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-lg text-xs font-bold inline-flex items-center gap-1 shadow-sm transition" title="खर्चा जोड़ें / देखें">
+              <span>₹${kharcha.toLocaleString('en-IN')}</span>
+              <span class="text-[10px] bg-rose-200 text-rose-800 px-1 rounded-full font-bold">+</span>
+            </button>
+          </td>
+          <td class="p-2 text-right font-extrabold text-emerald-700 bg-emerald-50/50">₹${netPay.toLocaleString('en-IN')}</td>
+          <td class="p-2 text-center no-print">
+            <button onclick="deleteLabour(${l.id})" class="text-slate-400 hover:text-rose-600 p-1" title="हटाएं">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      const tfoot = document.getElementById('tableFooterRow');
+      tfoot.innerHTML = `
+        <td colspan="${4 + daysCount + 1}" class="p-2.5 text-right font-bold text-slate-700">कुल योग (Grand Total):</td>
+        <td class="p-2.5 text-right font-bold text-slate-900">₹${grandBasePay.toLocaleString('en-IN')}</td>
+        <td class="p-2.5 text-right font-bold text-emerald-700">₹${grandOT.toLocaleString('en-IN')}</td>
+        <td class="p-2.5 text-center font-bold text-rose-700">₹${grandKharcha.toLocaleString('en-IN')}</td>
+        <td class="p-2.5 text-right font-black text-emerald-700 text-sm">₹${grandNet.toLocaleString('en-IN')}</td>
+        <td class="no-print"></td>
+      `;
+    }
+
+    function openSyncSettingsModal() {
+      document.getElementById('scriptUrlInput').value = appData.googleAppScriptUrl || '';
+      document.getElementById('syncSettingsModal').classList.remove('hidden');
+    }
+
+    function closeSyncSettingsModal() {
+      document.getElementById('syncSettingsModal').classList.add('hidden');
+    }
+
+    function saveSyncSettings() {
+      const url = document.getElementById('scriptUrlInput').value.trim();
+      appData.googleAppScriptUrl = url;
+      saveToLocal();
+      closeSyncSettingsModal();
+      alert('Google Apps Script URL सुरक्षित हो गया!');
+    }
+
+    function openExpenseModal(labourId) {
+      activeModalLabourId = labourId;
+      const labour = appData.masterLabourList.find(x => x.id === labourId);
+      document.getElementById('modalLabourTitle').innerText = `${labour ? labour.name : 'मजदूर'} - खर्चा खाता`;
+      document.getElementById('modalMonthSubtitle').innerText = `${getMonthName(appData.currentMonth)} ${appData.currentYear}`;
+      
+      document.getElementById('newExpAmount').value = '';
+      document.getElementById('newExpDesc').value = '';
+      
+      renderExpenseList();
+      document.getElementById('expenseModal').classList.remove('hidden');
+    }
+
+    function closeExpenseModal() {
+      document.getElementById('expenseModal').classList.add('hidden');
+      activeModalLabourId = null;
+      renderTable();
+    }
+
+    function renderExpenseList() {
+      const key = getMonthKey();
+      const record = appData.monthlyRecords[key]?.[activeModalLabourId];
+      const listContainer = document.getElementById('expenseListContainer');
+      listContainer.innerHTML = '';
+
+      if (!record || !record.kharchaList || record.kharchaList.length === 0) {
+        listContainer.innerHTML = `
+          <div class="text-center py-6 text-slate-400 text-xs">
+            <i class="fa-solid fa-receipt text-2xl mb-1 block"></i>
+            इस महीने कोई खर्चा एंट्री नहीं है।
+          </div>
+        `;
+        document.getElementById('modalTotalKharcha').innerText = '₹0';
+        return;
+      }
+
+      let total = 0;
+      record.kharchaList.forEach((item, index) => {
+        total += parseFloat(item.amount) || 0;
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs';
+        div.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-slate-400">${index + 1}.</span>
+            <div>
+              <span class="font-bold text-rose-600">₹${item.amount}</span>
+              <span class="text-slate-600 ml-2">${item.desc || 'विवरण नहीं'}</span>
+            </div>
+          </div>
+          <button onclick="deleteSingleExpense(${item.id})" class="text-slate-400 hover:text-rose-600 p-1">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        `;
+        listContainer.appendChild(div);
+      });
+
+      document.getElementById('modalTotalKharcha').innerText = `₹${total.toLocaleString('en-IN')}`;
+    }
+
+    function addSingleExpense() {
+      const amountInput = document.getElementById('newExpAmount');
+      const descInput = document.getElementById('newExpDesc');
+      const amount = parseFloat(amountInput.value);
+
+      if (!amount || amount <= 0) {
+        alert('कृपया सही राशि डालें!');
+        return;
+      }
+
+      const key = getMonthKey();
+      if (!appData.monthlyRecords[key][activeModalLabourId].kharchaList) {
+        appData.monthlyRecords[key][activeModalLabourId].kharchaList = [];
+      }
+
+      appData.monthlyRecords[key][activeModalLabourId].kharchaList.push({
+        id: Date.now(),
+        amount: amount,
+        desc: descInput.value.trim() || 'खर्चा'
+      });
+
+      amountInput.value = '';
+      descInput.value = '';
+      renderExpenseList();
+      renderTable();
+    }
+
+    function deleteSingleExpense(expenseId) {
+      const key = getMonthKey();
+      const list = appData.monthlyRecords[key][activeModalLabourId].kharchaList;
+      appData.monthlyRecords[key][activeModalLabourId].kharchaList = list.filter(item => item.id !== expenseId);
+      renderExpenseList();
+      renderTable();
+    }
+
+    // Toggle Cycle: '' (Empty) -> P -> H -> A -> '' (Empty)
+    function toggleAttendance(labourId, day) {
+      const key = getMonthKey();
+      if (!appData.monthlyRecords[key][labourId].attendance) {
+        appData.monthlyRecords[key][labourId].attendance = {};
+      }
+      const current = appData.monthlyRecords[key][labourId].attendance[day] || '';
+      let next = '';
+      if (current === '') next = 'P';
+      else if (current === 'P') next = 'H';
+      else if (current === 'H') next = 'A';
+      else if (current === 'A') next = '';
+
+      if (next === '') {
+        delete appData.monthlyRecords[key][labourId].attendance[day];
+      } else {
+        appData.monthlyRecords[key][labourId].attendance[day] = next;
+      }
+      renderTable();
+    }
+
+    function updateMasterField(id, field, value) {
+      const labour = appData.masterLabourList.find(x => x.id === id);
+      if (labour) {
+        labour[field] = field === 'dailyRate' ? (parseFloat(value) || 0) : value;
+        renderTable();
+      }
+    }
+
+    function updateMonthlyField(id, field, value) {
+      const key = getMonthKey();
+      if (appData.monthlyRecords[key] && appData.monthlyRecords[key][id]) {
+        appData.monthlyRecords[key][id][field] = parseFloat(value) || 0;
+        renderTable();
+      }
+    }
+
+    function triggerPhotoUpload(id) {
+      document.getElementById(`photo-input-${id}`).click();
+    }
+
+    function uploadLabourPhoto(event, id) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const labour = appData.masterLabourList.find(x => x.id === id);
+          if (labour) {
+            labour.photo = e.target.result;
+            renderTable();
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function addLabourRow() {
+      const newId = Date.now();
+      appData.masterLabourList.push({
+        id: newId,
+        name: 'नया मजदूर',
+        role: 'लेबर',
+        dailyRate: 450,
+        photo: ''
+      });
+      renderTable();
+    }
+
+    function deleteLabour(id) {
+      if (confirm('क्या आप इस लेबर को हटाना चाहते हैं?')) {
+        appData.masterLabourList = appData.masterLabourList.filter(x => x.id !== id);
+        renderTable();
+      }
+    }
+
+    function changeMonthYear() {
+      appData.currentMonth = parseInt(document.getElementById('monthSelect').value);
+      appData.currentYear = parseInt(document.getElementById('yearSelect').value);
+      appData.site = document.getElementById('siteName').value;
+      renderTable();
+    }
+
+    function saveToLocal() {
+      localStorage.setItem('multi_labour_sheet_v4', JSON.stringify(appData));
+      alert('डेटा सुरक्षित (Saved) हो गया!');
+    }
+
+    function loadFromLocal() {
+      const saved = localStorage.getItem('multi_labour_sheet_v4') || localStorage.getItem('multi_labour_sheet_v3') || localStorage.getItem('multi_labour_sheet_v2');
+      if (saved) {
+        try {
+          appData = JSON.parse(saved);
+          document.getElementById('monthSelect').value = appData.currentMonth;
+          document.getElementById('yearSelect').value = appData.currentYear;
+          document.getElementById('siteName').value = appData.site || '';
+        } catch(e) {
+          console.error("Local loading error:", e);
+        }
+      }
+    }
+
+    // Reliable Form POST Sync (Bypasses all CORS blocks)
+    function syncToGoogleDrive() {
+      if (!appData.googleAppScriptUrl || appData.googleAppScriptUrl.trim() === "") {
+        openSyncSettingsModal();
+        alert("कृपया पहले 'सेटिंग' में जाकर अपना Web App URL दर्ज करें!");
+        return;
+      }
+
+      let iframe = document.getElementById('hidden-sync-frame');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'hidden-sync-frame';
+        iframe.name = 'hidden-sync-frame';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+
+      let form = document.getElementById('hidden-sync-form');
+      if (!form) {
+        form = document.createElement('form');
+        form.id = 'hidden-sync-form';
+        form.method = 'POST';
+        form.target = 'hidden-sync-frame';
+        form.style.display = 'none';
+
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'data';
+        input.id = 'hidden-sync-data';
+        form.appendChild(input);
+
+        document.body.appendChild(form);
+      }
+
+      form.action = appData.googleAppScriptUrl;
+      document.getElementById('hidden-sync-data').value = JSON.stringify(appData);
+      
+      form.submit();
+      alert('डेटा Google Sheet में भेज दिया गया है! 3 सेकंड में अपनी शीट चेक करें।');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadFromLocal();
+      renderTable();
+    });
+  </script>
+</body>
+</html>
